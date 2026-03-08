@@ -46,9 +46,9 @@ export default async function handler(req, res) {
     const response = await fetch(
       `https://api.mercadolibre.com/items/${ids}`,
       {
-        headers: {
-          Authorization: `Bearer ${accessToken}`
-        }
+        const response = await fetch(
+  `https://api.mercadolibre.com/items/${ids}`
+);
       }
     );
 
