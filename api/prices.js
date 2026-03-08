@@ -10,20 +10,7 @@ export default async function handler(req, res) {
 
   try {
 
-    // extrair ID MLB da URL
-    const match = url.match(/MLB\d+/);
-
-    if (!match) {
-      return res.status(400).json({
-        error: "ID do produto não encontrado na URL"
-      });
-    }
-
-    const itemId = match[0];
-
-    const cleanUrl = `https://produto.mercadolivre.com.br/${itemId}`;
-
-    const response = await fetch(cleanUrl, {
+    const response = await fetch(url, {
       headers: {
         "User-Agent": "Mozilla/5.0"
       }
@@ -31,19 +18,43 @@ export default async function handler(req, res) {
 
     const html = await response.text();
 
-    const priceMatch = html.match(/"price":\s?(\d+(\.\d+)?)/);
+    const scripts = html.match(/<script type="application\/ld\+json".*?>.*?<\/script>/gs);
 
-    if (!priceMatch) {
+    if (!scripts) {
       return res.status(404).json({
-        error: "Preço não encontrado"
+        error: "Scripts JSON-LD não encontrados"
       });
     }
 
-    const price = priceMatch[1];
+    for (const script of scripts) {
 
-    return res.status(200).json({
-      id: itemId,
-      price
+      const jsonText = script
+        .replace(/<script.*?>/, "")
+        .replace("</script>", "")
+        .trim();
+
+      try {
+
+        const data = JSON.parse(jsonText);
+
+        if (data["@type"] === "Product") {
+
+          return res.status(200).json({
+            title: data.name,
+            price: data.offers.price,
+            currency: data.offers.priceCurrency,
+            image: data.image,
+            id: data.productID
+          });
+
+        }
+
+      } catch (err) {}
+
+    }
+
+    return res.status(404).json({
+      error: "Produto não encontrado no JSON-LD"
     });
 
   } catch (error) {
