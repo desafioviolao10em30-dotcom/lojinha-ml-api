@@ -41,15 +41,8 @@ export default async function handler(req, res) {
 
   try {
 
-    const accessToken = await refreshAccessToken();
-
     const response = await fetch(
-      `https://api.mercadolibre.com/items/${ids}`,
-      {
-        const response = await fetch(
-  `https://api.mercadolibre.com/items/${ids}`
-);
-      }
+      `https://api.mercadolibre.com/items/${ids}`
     );
 
     const data = await response.json();
