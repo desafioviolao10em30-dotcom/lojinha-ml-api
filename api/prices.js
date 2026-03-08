@@ -1,36 +1,74 @@
 export default async function handler(req, res) {
 
-  const { ids } = req.query;
+  const { url } = req.query;
 
-  if (!ids) {
+  if (!url) {
     return res.status(400).json({
-      error: "Informe ids na query"
+      error: "Informe a url do produto"
     });
   }
 
   try {
 
-    const response = await fetch(
-      `https://api.mercadolibre.com/sites/MLB/search?q=${ids}`
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "text/html"
+      }
+    });
+
+    const html = await response.text();
+
+    // procurar bloco JSON-LD do produto
+    const match = html.match(
+      /<script type="application\/ld\+json"[^>]*>(.*?)<\/script>/gs
     );
 
-    const data = await response.json();
-
-    if (!data.results || data.results.length === 0) {
+    if (!match) {
       return res.status(404).json({
-        error: "Produto não encontrado"
+        error: "JSON-LD não encontrado"
       });
     }
 
-    const item = data.results[0];
+    let productData = null;
 
-    return res.status(200).json({
-      id: item.id,
-      title: item.title,
-      price: item.price,
-      permalink: item.permalink,
-      thumbnail: item.thumbnail
-    });
+    for (const block of match) {
+
+      const json = block
+        .replace(/<script[^>]*>/, "")
+        .replace("</script>", "")
+        .trim();
+
+      try {
+
+        const parsed = JSON.parse(json);
+
+        if (parsed["@type"] === "Product") {
+          productData = parsed;
+          break;
+        }
+
+      } catch (e) {}
+
+    }
+
+    if (!productData) {
+      return res.status(404).json({
+        error: "Produto não encontrado no JSON-LD"
+      });
+    }
+
+    const result = {
+      title: productData.name,
+      price: productData.offers?.price,
+      currency: productData.offers?.priceCurrency,
+      image: productData.image,
+      productID: productData.productID,
+      sku: productData.sku,
+      url: productData.offers?.url
+    };
+
+    return res.status(200).json(result);
 
   } catch (error) {
 
