@@ -11,7 +11,13 @@ export default async function handler(req, res) {
   try {
 
     const response = await fetch(
-      `https://api.mercadolibre.com/items/${ids}`
+      `https://api.mercadolibre.com/items/${ids}`,
+      {
+        headers: {
+          "User-Agent": "Mozilla/5.0",
+          "Accept": "application/json"
+        }
+      }
     );
 
     const data = await response.json();
