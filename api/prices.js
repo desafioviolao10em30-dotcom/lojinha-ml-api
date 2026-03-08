@@ -11,11 +11,13 @@ export default async function handler(req, res) {
   try {
 
     const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0",
-        "Accept": "text/html"
-      }
-    });
+  headers: {
+    "User-Agent":
+      "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15",
+    "Accept": "text/html",
+    "Accept-Language": "pt-BR,pt;q=0.9"
+  }
+});
 
     const html = await response.text();
 
